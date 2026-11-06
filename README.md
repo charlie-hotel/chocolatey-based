@@ -19,7 +19,7 @@ It contains the following modules:
 
 ## Requirements
 
-- `ansible-core` >= 2.16, 2.17, 2.18
+- `ansible-core` >= 2.18, 2.19, 2.20
 - `python` >= 3.8
 
 ### Python Dependencies
@@ -108,9 +108,9 @@ Remove the Community Package Repository (as you have an internal repository; rec
 
 ## Testing
 
-This collection is tested against `ansible-core` versions >= **2.16, 2.17, 2.18**.
+This collection is tested against `ansible-core` versions >= **2.18, 2.19, 2.20**.
 
-Testing is primarily conducted on Ubuntu runners in Azure Pipelines at the latest OS version, with the collection being targeted at a Windows 10 Enterprise 21H2 client machine, using `ansible-test` to run the tests included in the collection.
+Testing runs on GitHub Actions, using `ansible-test` against a Windows Server 2025 host (the `windows-latest` runner). See [`build/README.md`](build/README.md) for details.
 
 ## Contributing
 
@@ -130,11 +130,11 @@ ansible-test windows-integration --docker -v --color
 
 Presently only the latest version of the collection is supported.
 
-If you need to report an issue with the collection, please [file an issue on Github](https://github.com/chocolatey/chocolatey-ansible/issues/new).
+If you need to report an issue with the collection, please [file an issue on Github](https://github.com/chocolatey-community/chocolatey-ansible/issues/new).
 
 ## Release Notes
 
-[Release Notes on Github](https://github.com/chocolatey/chocolatey-ansible/releases)
+[Release Notes on Github](https://github.com/chocolatey-community/chocolatey-ansible/releases)
 
 ## Related Information
 
@@ -148,5 +148,5 @@ See [LICENSE](LICENSE) to see full text.
 
 <!-- Link Targets -->
 
-[pipeline-link]: https://dev.azure.com/ChocolateyCI/Chocolatey-Ansible/_build/latest?definitionId=3&branchName=master
-[pipeline-badge]: https://dev.azure.com/ChocolateyCI/Chocolatey-Ansible/_apis/build/status/Chocolatey%20Collection%20CI?branchName=master
+[pipeline-link]: https://github.com/chocolatey-community/chocolatey-ansible/actions/workflows/ci.yml?query=branch%3Amaster
+[pipeline-badge]: https://github.com/chocolatey-community/chocolatey-ansible/actions/workflows/ci.yml/badge.svg?branch=master

@@ -192,6 +192,13 @@ if ($state -in "absent", "reinstalled") {
                 Version = $version
                 AllowMultiple = $useAllowMultiple
             }
+
+            # For state=reinstalled, choco_args are intended for the install step and
+            # may not be valid for `choco uninstall`, so only pass them when removing.
+            if ($state -eq "absent") {
+                $uninstallParams.ChocoArgs = $choco_args
+            }
+
             Uninstall-ChocolateyPackage @uninstallParams
         }
     }
@@ -209,7 +216,9 @@ if ($state -in @("downgrade", "latest", "upgrade", "present", "reinstalled")) {
     $missingPackages = [System.Collections.Generic.List[string]]@()
 
     if ($state -eq "present" -and $force) {
-        $missingPackages.Add($name)
+        foreach ($package in $name) {
+            $missingPackages.Add($package)
+        }
     }
     else {
         foreach ($package in $packageInfo.GetEnumerator()) {
@@ -255,7 +264,6 @@ if ($state -in @("downgrade", "latest", "upgrade", "present", "reinstalled")) {
         Force = $force
         IgnoreChecksums = $ignore_checksums
         IgnoreDependencies = $ignore_dependencies
-        IgnorePinned = $ignore_pinned
         InstallArgs = $install_args
         OverrideArgs = $override_args
         PackageParams = $package_params
@@ -290,6 +298,11 @@ if ($state -in @("downgrade", "latest", "upgrade", "present", "reinstalled")) {
         $installedPackages = ($packageInfo.GetEnumerator() | Where-Object { $null -ne $_.Value }).Key
 
         if ($null -ne $installedPackages) {
+            # --ignore-pinned only applied to choco upgrade and so this is being
+            # added to the common parameters here to avoid an error if it passed
+            # through to choco install.
+            $commonParams.Add('IgnorePinned', $ignore_pinned)
+
             Update-ChocolateyPackage -Package $installedPackages @commonParams
         }
     }

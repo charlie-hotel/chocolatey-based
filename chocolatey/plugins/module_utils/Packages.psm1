@@ -195,7 +195,13 @@ function Get-ChocolateyVersion {
     # purposes of determining the version of Chocolatey CLI.
     # We're using the suggested regex for matching SemVer strings:
     # https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
-    $SemVerRegex = '(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?'
+    # Assembled from parts only to keep each line within the 160 character limit; the
+    # joined result is the suggested expression verbatim.
+    $SemVerRegex = -join @(
+        '(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)'
+        '(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?'
+        '(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?'
+    )
     if ($result.stdout -match $SemVerRegex) {
         ($script:ChocolateyVersion = [version]($matches[0] -replace '-.+$'))
     }
@@ -723,7 +729,8 @@ function Update-ChocolateyPackage {
         $Module.Result.stdout = $result.stdout
     }
 
-    if ($result.stdout -match ' upgraded (\d+)/\d+ package') {
+    # Check mode (--what-if) reports "can upgrade X/Y packages" rather than "upgraded X/Y packages"
+    if ($result.stdout -match ' (?:can upgrade|upgraded) (\d+)/\d+ package') {
         if ($matches[1] -gt 0) {
             Set-TaskResultChanged
         }
@@ -945,6 +952,11 @@ function Uninstall-ChocolateyPackage {
         [Ansible.Basic.AnsibleModule]
         $Module = (Get-AnsibleModule),
 
+        # Any additional arguments to be passed directly to `choco.exe`
+        [Parameter()]
+        [string[]]
+        $ChocoArgs,
+
         # Set to force choco to reinstall the package if the package (version)
         # is already installed.
         [Parameter()]
@@ -1005,6 +1017,8 @@ function Uninstall-ChocolateyPackage {
         if ($PSBoundParameters.ContainsKey('Timeout')) { "--timeout", $timeout }
         if ($SkipScripts) { "--skip-scripts" }
         if ($PackageParams) { "--package-parameters", $package_params }
+
+        if ($ChocoArgs) { $ChocoArgs }
     )
 
     $command = Argv-ToString -Arguments $arguments
@@ -1092,11 +1106,12 @@ function Install-Chocolatey {
         # Chocolatey CLI v2.0.0 and above requires .NET Framework 4.8 to be installed.
         # If the user has specified a 1.x version of Chocolatey to install, or the .NET requirement is met, we'll install Chocolatey.
         $dotNetRegistryPath = "HKLM:\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full"
-        $installedDotNetVersion = [version]((Get-ItemProperty -Path $dotNetRegistryPath -Name Version).Version)
+        $installedDotNetVersion = [version]((Get-ItemProperty -LiteralPath $dotNetRegistryPath -Name Version).Version)
 
         $chocolateyLegacyVersion = if ($Version) {
             [version]$Version -lt [version]"2.0.0"
-        } else {
+        }
+        else {
             $false
         }
 
